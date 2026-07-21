@@ -1,0 +1,50 @@
+# VibeChat 本地栈（Tinode 后端 + 品牌化 Web UI）
+# 启动: sudo docker compose up -d
+# 访问: http://localhost:6060/
+
+services:
+  mysql:
+    image: mysql:8.0
+    container_name: tinode-mysql
+    restart: unless-stopped
+    environment:
+      # 不要预建 tinode 库：由 tinode 的 init-db 自己 CREATE DATABASE
+      MYSQL_ALLOW_EMPTY_PASSWORD: "yes"
+    volumes:
+      - tinode-mysql-data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1", "-uroot"]
+      interval: 5s
+      timeout: 5s
+      retries: 30
+
+  tinode:
+    image: tinode/tinode-mysql:latest
+    container_name: tinode-srv
+    restart: unless-stopped
+    depends_on:
+      mysql:
+        condition: service_healthy
+    ports:
+      - "6060:6060"
+    environment:
+      WAIT_FOR: "mysql:3306"
+      MYSQL_DSN: "root@tcp(mysql)/tinode?parseTime=true&collation=utf8mb4_unicode_ci"
+      DEBUG_EMAIL_VERIFICATION_CODE: "123456"
+      SAMPLE_DATA: "data.json"
+      # 使用宿主机上的品牌化静态资源
+      EXT_STATIC_DIR: "/brand-static"
+      # 必须是 JSON 布尔字面量 false（不能留空），服务端 config 会直接展开。
+      # 注意：镜像 entrypoint 只要变量非空就会写 firebase-init.js；前端已从 index.html 去掉该脚本。
+      FCM_PUSH_ENABLED: "false"
+      TNPG_PUSH_ENABLED: "false"
+    volumes:
+      - tinode-uploads:/uploads
+      - tinode-botdata:/botdata
+      # rw：entrypoint 会写入 firebase-init.js
+      - ./branding/static:/brand-static
+
+volumes:
+  tinode-mysql-data:
+  tinode-uploads:
+  tinode-botdata:

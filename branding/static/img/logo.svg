@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="VibeChat">
+  <defs>
+    <linearGradient id="g" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#818CF8"/>
+      <stop offset="100%" stop-color="#6366F1"/>
+    </linearGradient>
+  </defs>
+  <rect width="512" height="512" rx="112" fill="url(#g)"/>
+  <path d="M156 150h200c18 0 28 20 16 34L286 300v62c0 12-10 22-22 22h-16c-12 0-22-10-22-22v-62L140 184c-12-14-2-34 16-34z" fill="#fff" opacity=".95"/>
+  <circle cx="368" cy="168" r="28" fill="#FDE68A"/>
+</svg>
