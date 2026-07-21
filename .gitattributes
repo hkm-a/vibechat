@@ -1,0 +1,24 @@
+# Auto-detect text files, normalize to LF
+* text=auto
+
+# Explicitly declare shell scripts must use LF
+*.sh text eol=lf
+
+# Dockerfiles
+Dockerfile* text
+
+# Markdown / docs
+*.md text
+*.yml text
+*.yaml text
+*.json text
+
+# Binaries
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.webp binary
+*.ico binary
+*.woff binary
+*.woff2 binary

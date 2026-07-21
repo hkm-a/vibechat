@@ -1,6 +1,8 @@
 # OS
 .DS_Store
 Thumbs.db
+*.swp
+*.swo
 
 # Python
 __pycache__/
@@ -14,7 +16,6 @@ client/.venv-win/
 
 # Node
 node_modules/
-package-lock.json
 
 # Rust / Tauri
 target/
@@ -23,14 +24,12 @@ target/
 # IDE
 .vscode/
 .idea/
-*.swp
 
 # Build outputs
 dist/
 
 # Logs
 *.log
-/tmp/
 
 # Misc
 npc/personas.json
