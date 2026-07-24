@@ -1,113 +1,96 @@
+<p align="center">
+  <img src="docs/readme/hero.svg" width="100%" alt="VibeChat：自托管即时通信服务，配有 79 个 AI 角色 NPC，并提供 Web、Tauri 与 Qt 客户端。">
+</p>
+
 # VibeChat
 
-[![CI](https://github.com/hkm-a/vibechat/actions/workflows/build.yml/badge.svg)](https://github.com/hkm-a/vibechat/actions/workflows/build.yml)
-[![Release](https://img.shields.io/github/v/release/hkm-a/vibechat?include_prereleases)](https://github.com/hkm-a/vibechat/releases)
-[![License](https://img.shields.io/github/license/hkm-a/vibechat)](LICENSE)
-[![Node](https://img.shields.io/badge/node-22-blue)](https://nodejs.org)
+> 用自己的 Docker 栈运行即时通信服务，并让 AI 角色在私聊和群聊中参与对话。
 
-Self-hosted instant messaging powered by [Tinode](https://github.com/tinode/chat), with AI NPC bots (Honkai: Star Rail roster).
+<p align="center">
+  <a href="#快速开始">快速开始</a> ·
+  <a href="#它如何工作">工作方式</a> ·
+  <a href="#客户端">客户端</a> ·
+  <a href="#开发与发布">开发与发布</a>
+</p>
 
-## Architecture
+[![构建状态](https://github.com/hkm-a/vibechat/actions/workflows/build.yml/badge.svg)](https://github.com/hkm-a/vibechat/actions/workflows/build.yml)
+[![最新发布](https://img.shields.io/github/v/release/hkm-a/vibechat?include_prereleases)](https://github.com/hkm-a/vibechat/releases)
+[![许可证](https://img.shields.io/github/license/hkm-a/vibechat)](LICENSE)
+[![Node.js 版本](https://img.shields.io/badge/node-22-blue)](https://nodejs.org)
 
-```
-┌─────────────────────────────────────────────────┐
-│  always-on (Docker + background processes)      │
-│                                                  │
-│  MySQL ←── Tinode server ←── WebSocket          │
-│                   ↑                              │
-│              NPC workers (x80)                   │
-│                   ↑                              │
-│              Agnes API (LLM)                     │
-└─────────────────────────────────────────────────┘
-         ↑                    ↑
-         │            ┌───────┘
-    Web UI           Desktop clients
-  (localhost:6060)    (Tauri / Qt / Chrome app)
-```
+## 它解决什么问题
 
-| Layer | Component | Location |
-|-------|-----------|----------|
-| Database | MySQL 8 | `tinode-mysql` container |
-| IM server | Tinode | `tinode-srv` container, port 6060 |
-| AI NPC | Python workers | `npc/` — 80 bots, WebSocket to Tinode |
-| Web UI | Tinode built-in | http://localhost:6060/ |
-| Desktop | Tauri / Qt / Chrome app | `desktop-tauri/` / `client/` |
+VibeChat 将 Tinode 即时通信服务、MySQL、品牌化 Web 界面和 AI NPC 工作进程组合为一套可自行部署的聊天栈。消息服务运行在 Docker 中；需要桌面体验时，可以使用浏览器应用、Tauri 壳或独立的 Qt 客户端。
 
-## Quick start
+## 快速开始
+
+前提：Docker 与 Docker Compose 已可用；若要启动 NPC，还需配置 `AGNES_API_KEY`，并在 WSL/Linux 环境中使用 Python 3。
 
 ```bash
-# 1. Start the server stack
+# 1. 启动 MySQL 与 Tinode
 sudo docker compose up -d
 
-# 2. Start AI NPCs
+# 2. 启动 AI NPC
 cd npc && ./start.sh
 
-# 3. Open http://localhost:6060/ and register an account
+# 3. 打开 Web 客户端并注册账号
+# http://localhost:6060/
 ```
 
-Or use the one-shot launcher:
+在 Linux/WSL 上，也可以使用一键启动器：
 
 ```bash
 ./start-desktop.sh
 ```
 
-## Desktop clients
+## 它如何工作
 
-| Client | UI engine | Notes |
-|--------|-----------|-------|
-| **Chrome app** (Windows) | Chromium | Same as Web UI. Run `start-on-windows.bat` or desktop shortcut |
-| **Tauri** (Linux/WSL) | WebKit | `cd desktop-tauri && ./start.sh` |
-| **Qt** (PySide6) | Native | Separate UI, not Web. `cd client && ./start.sh` |
-
-The Web UI and Chrome/Tauri wrappers all render the same HTML/CSS/JS from Tinode. The Qt client is a completely independent implementation.
-
-## Demo accounts
-
-| Account | Password | Persona |
-|---------|----------|---------|
-| alice | alice123 | March 7th (三月七) |
-| bob | bob123 | Firefly (流萤) |
-| carol | carol123 | Sparkle (花火) |
-| hsr_* | npc123456 | Other HSR characters (auto-registered on NPC start) |
-
-Development email verification code: `123456`
-
-> Register your own account for chatting — the demo accounts are for NPC personas.
-
-## AI NPC
-
-80 playable Honkai: Star Rail characters, each with a unique persona. NPCs connect to Tinode via WebSocket and respond using the Agnes API.
-
-```bash
-cd npc && ./start.sh
-# Logs: /tmp/vibechat-npc.log
+```text
+Web / Tauri / Qt 客户端
+          -> Tinode 服务 <-> MySQL
+                    ^
+              Python NPC 工作进程
+                    ^
+               Agnes API
 ```
 
-- **Private chat**: NPC replies to every message
-- **Group chat**: NPC replies when mentioned (@name) or randomly (see config)
-- **NPC-to-NPC**: filtered to prevent mutual spam
-- **Persona source**: `npc/vibechat_npc/roster.py` → `npc/personas.json`
+| 层级 | 组件 | 作用 |
+| --- | --- | --- |
+| 数据库 | MySQL 8 | 保存 Tinode 数据 |
+| 消息服务 | Tinode | 提供 WebSocket 与 Web UI，默认端口 `6060` |
+| AI 角色 | Python 工作进程 | 将 79 个角色连接至 Tinode 并生成回复 |
+| Web | Tinode 品牌化静态资源 | 在浏览器访问 `http://localhost:6060/` |
+| 桌面 | Tauri / Qt / 浏览器应用 | 提供不同运行环境下的桌面入口 |
 
-### Group chat parameters
+## AI 角色
 
-| Variable | Default | Description |
-|----------|---------|-------------|
-| `NPC_AGNES_RPM` | 20 | Global Agnes API rate limit (requests/min) |
-| `NPC_GROUP_REPLY_CHANCE` | 0.12 | Per-message random reply probability |
-| `NPC_GROUP_MAX_REPLIES` | 2 | Max NPC replies per human message |
+项目从 `npc/vibechat_npc/roster.py` 生成 79 个角色 NPC。私聊会回复每条消息；群聊在被 `@` 时回复，也可以由配置控制随机插话。角色运行参数来自环境变量：
 
-## Environment variables
+| 变量 | 默认值 | 说明 |
+| --- | --- | --- |
+| `AGNES_API_KEY` | 无 | NPC 启动所需的 API 密钥 |
+| `AGNES_MODEL` | `agnes-2.5-flash` | 主模型 |
+| `AGNES_FALLBACK_MODEL` | `agnes-2.0-flash` | 回退模型 |
+| `TINODE_WS` | `ws://127.0.0.1:6060/v0/channels` | Tinode WebSocket 地址 |
+| `NPC_CONNECT_CONCURRENCY` | `12` | NPC 并发连接数 |
+| `NPC_AGNES_RPM` | `20` | 全局请求速率上限 |
 
-| Variable | Default | Description |
-|----------|---------|-------------|
-| `AGNES_API_KEY` | Windows env | Agnes API key |
-| `AGNES_MODEL` | `agnes-2.5-flash` | Primary LLM model |
-| `AGNES_FALLBACK_MODEL` | `agnes-2.0-flash` | Fallback model |
-| `TINODE_WS` | `ws://127.0.0.1:6060/v0/channels` | Tinode WebSocket endpoint |
-| `NPC_PERSONAS` | `npc/personas.json` | Persona definitions file |
-| `NPC_CONNECT_CONCURRENCY` | 12 | Concurrent WebSocket handshakes |
+本地开发可使用预置账号 `alice`、`bob`、`carol`；它们分别对应三月七、流萤和花火。完整角色配置由 `npc/gen_personas.py` 生成。
 
-## Branding
+## 客户端
+
+| 客户端 | 适用环境 | 启动方式 |
+| --- | --- | --- |
+| Web | 任意现代浏览器 | 打开 `http://localhost:6060/` |
+| 浏览器应用 | Windows | 运行 `desktop-tauri/start-on-windows.bat` |
+| Tauri | Linux / WSLg | `cd desktop-tauri && ./start.sh` |
+| Qt | Linux / WSLg | `cd client && ./start.sh` |
+
+Web、浏览器应用和 Tauri 壳使用同一份 Tinode HTML/CSS/JavaScript；Qt 客户端为独立实现。
+
+## 品牌化 Web 界面
+
+品牌资源位于 `branding/static/`。首次使用或升级 Tinode 镜像时，先从运行中的容器同步原始静态资源；随后执行品牌化脚本并重启服务：
 
 ```bash
 sudo docker cp tinode-srv:/opt/tinode/static ./branding/static
@@ -115,24 +98,34 @@ python3 branding/apply-brand.py
 sudo docker compose restart tinode
 ```
 
-## Reset all data
+## 开发与发布
 
-```bash
-sudo docker compose down -v
-sudo docker compose up -d
-```
-
-## CI / Release
-
-Push a tag to trigger a release build:
+桌面构建工作流会在 Linux、macOS 和 Windows 上生成安装包。推送版本标签后，工作流将发布 `.deb`、`.dmg` 和 `.exe` 文件：
 
 ```bash
 git tag v0.2.0
 git push origin v0.2.0
 ```
 
-The CI pipeline builds installers for Linux (.deb), macOS (.dmg), and Windows (.exe), then publishes them to GitHub Releases.
+贡献前至少检查启动脚本与 Docker Compose 配置：
 
-## License
+```bash
+bash -n npc/start.sh
+bash -n start-desktop.sh
+bash -n desktop-tauri/start.sh
+bash -n client/start.sh
+docker compose config
+```
 
-MIT
+更详细的项目结构与贡献流程见 [CONTRIBUTING.md](CONTRIBUTING.md)。
+
+## 重置本地数据
+
+```bash
+sudo docker compose down -v
+sudo docker compose up -d
+```
+
+## 许可证
+
+[MIT](LICENSE)
