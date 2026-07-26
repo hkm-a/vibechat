@@ -77,8 +77,20 @@ def resolve_agnes_api_key() -> str:
 
 
 def load_personas(path: Path | None = None) -> tuple[Persona, ...]:
-    p = path or Path(os.environ.get("NPC_PERSONAS", DEFAULT_PERSONAS))
-    raw: dict[str, Any] = json.loads(p.read_text(encoding="utf-8"))
+    configured_path = os.environ.get("NPC_PERSONAS")
+    explicit_path = path or (Path(configured_path) if configured_path else None)
+    source_path = explicit_path or DEFAULT_PERSONAS
+
+    if source_path.exists():
+        raw: dict[str, Any] = json.loads(source_path.read_text(encoding="utf-8"))
+    elif explicit_path is not None:
+        raise SystemExit(f"人物配置文件不存在: {source_path}")
+    else:
+        # 花名册是默认人物的唯一事实来源，JSON 仅用于显式覆盖或导出。
+        from .roster import build_persona_rows
+
+        raw = {"npcs": build_persona_rows()}
+
     items = []
     for row in raw.get("npcs", []):
         items.append(
@@ -91,7 +103,7 @@ def load_personas(path: Path | None = None) -> tuple[Persona, ...]:
             )
         )
     if not items:
-        raise SystemExit(f"personas 为空: {p}")
+        raise SystemExit(f"人物配置为空: {source_path}")
     return tuple(items)
 
 
