@@ -151,7 +151,7 @@ if (__vbPushReady) {
 
 def main() -> None:
     if not ROOT.exists():
-        raise SystemExit(f"missing static dir: {ROOT}")
+        raise SystemExit(f"缺少静态资源目录：{ROOT}")
 
     html = (ROOT / "index.html").read_text(encoding="utf-8")
     for a, b in {
@@ -167,7 +167,7 @@ def main() -> None:
         "img/og-logo.jpeg": "img/og-logo.png",
     }.items():
         html = html.replace(a, b)
-    # already branded re-run: keep VibeChat
+    # 重复运行时保留已经写入的 VibeChat 标题。
     html = html.replace("<title>Tinode</title>", f"<title>{BRAND}</title>")
     html = strip_firebase_script(html)
     # 缓存破坏：服务端 cache_control 很长，品牌更新后强制浏览器拉新 JS
@@ -217,11 +217,11 @@ def main() -> None:
     brand_js_tree()
     guard_service_worker()
 
-    #  bump SW 缓存桶：旧 service-worker 会强缓存静态资源，导致仍见 Tinode / 推送错误
+    # 更新 Service Worker 缓存桶，避免旧静态资源继续显示 Tinode 或推送错误。
     ver = ROOT / "version.js"
     if ver.exists():
         ver.write_text(
-            '// This is a generated file. Don\'t edit.\n\n'
+            '// 此文件由脚本生成，请勿手工编辑。\n\n'
             'const PACKAGE_VERSION = "0.25.3-vibechat1";\n',
             encoding="utf-8",
         )
@@ -229,7 +229,7 @@ def main() -> None:
     # 兜底：即使 entrypoint 写出空配置对象，也尽量写成“未定义”
     # （容器重启后会被 entrypoint 覆盖；真正禁用靠 index.html 不加载该脚本）
     (ROOT / "firebase-init.js").write_text(
-        "// push disabled for local VibeChat\n",
+        "// 本地 VibeChat 已禁用推送\n",
         encoding="utf-8",
     )
 
@@ -259,7 +259,7 @@ def main() -> None:
     ]:
         (ROOT / "img" / name).write_bytes(png_rgba(size, logo_pixel))
 
-    print(f"brand -> {BRAND} applied under {ROOT}")
+    print(f"品牌已应用：{BRAND}，目录：{ROOT}")
 
 
 if __name__ == "__main__":

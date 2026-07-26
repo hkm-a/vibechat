@@ -1,6 +1,6 @@
 @ECHO OFF
-REM Windows desktop: same Tinode web UI as browser (no redesign).
-REM Prefer Chrome/Edge app window = Chromium Blink, identical page.
+REM Windows 桌面端直接复用浏览器中的 Tinode Web 界面。
+REM 优先使用 Chrome 或 Edge 应用窗口，以保持相同的 Blink 渲染效果。
 setlocal EnableExtensions
 set "URL=http://localhost:6060/"
 set "BIN="

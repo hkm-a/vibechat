@@ -146,7 +146,7 @@ class NpcAgent:
         if not await self.rate_limiter.acquire_or_skip():
             used, limit = self.rate_limiter.snapshot()
             log.info(
-                "[%s] skip reply (rpm %s/%s) topic=%s",
+                "[%s] 已跳过回复（rpm %s/%s），主题=%s",
                 self.persona.username,
                 used,
                 limit,
@@ -185,7 +185,7 @@ class NpcAgent:
                 limit,
             )
         except Exception as e:  # noqa: BLE001
-            log.exception("[%s] reply failed: %s", self.persona.username, e)
+            log.exception("[%s] 回复失败：%s", self.persona.username, e)
             try:
                 await session.publish_text(topic, "（系统：NPC 暂时没接上，稍后再试）")
             except Exception:  # noqa: BLE001
@@ -213,10 +213,10 @@ class NpcAgent:
                 if session.user_id:
                     self.npc_user_ids.add(session.user_id)
                 await session.set_display_name(self.persona.display_name)
-                log.info("[%s] online as %s", self.persona.username, self.persona.display_name)
+                log.info("[%s] 已上线为 %s", self.persona.username, self.persona.display_name)
                 await session.run_forever()
             except Exception as e:  # noqa: BLE001
-                log.warning("[%s] disconnected: %s; retry in 5s", self.persona.username, e)
+                log.warning("[%s] 连接已断开：%s；5 秒后重试", self.persona.username, e)
                 await asyncio.sleep(5)
             finally:
                 await session.close()
@@ -249,7 +249,7 @@ async def run_all(settings: Settings) -> None:
         for p in settings.personas
     ]
     log.info(
-        "starting %d NPCs | connect=%d rpm=%d group_chance=%.2f group_max=%d | model=%s",
+        "正在启动 %d 个 NPC｜并发=%d rpm=%d 群聊概率=%.2f 群聊上限=%d｜模型=%s",
         len(agents),
         concurrency,
         settings.agnes_rpm,
@@ -258,5 +258,5 @@ async def run_all(settings: Settings) -> None:
         settings.primary_model,
     )
     preview = ", ".join(a.persona.display_name for a in agents[:8])
-    log.info("roster preview: %s%s", preview, "…" if len(agents) > 8 else "")
+    log.info("角色预览：%s%s", preview, "…" if len(agents) > 8 else "")
     await asyncio.gather(*(a.run() for a in agents))

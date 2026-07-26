@@ -107,16 +107,25 @@ git tag v0.2.0
 git push origin v0.2.0
 ```
 
-贡献前先运行不依赖 Docker 的 NPC 核心测试，再检查启动脚本与 Docker Compose 配置：
+贡献前先安装锁定的桌面依赖并运行完整本地检查，再验证 NPC、启动脚本与 Docker Compose 配置：
 
 ```bash
+cd desktop-tauri
+npm ci
+npm run check
+npm run build
+cd ..
+
 uv run --python 3.12 python -m unittest discover -s tests -v
 bash -n npc/start.sh
 bash -n start-desktop.sh
 bash -n desktop-tauri/start.sh
+bash -n desktop-tauri/dev.sh
 bash -n client/start.sh
 docker compose config
 ```
+
+`npm run build` 会自动把桌面等待页准备到 `desktop-tauri/dist/`，无需手工复制文件。Tinode 尚未启动时，Tauri 会先显示可操作的等待页，并在服务就绪后自动打开 Web 客户端。
 
 更详细的项目结构与贡献流程见 [CONTRIBUTING.md](CONTRIBUTING.md)。
 

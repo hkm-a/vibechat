@@ -86,7 +86,7 @@ class TinodeSession:
         sep = "&" if "?" in url else "?"
         if "apikey=" not in url:
             url = f"{url}{sep}apikey={self.api_key}"
-        log.info("[%s] connecting %s", self.username, url.split("?")[0])
+        log.info("[%s] 正在连接 %s", self.username, url.split("?")[0])
         self._ws = await _ws_connect(url)
         self._reader_task = asyncio.create_task(
             self._reader_loop(), name=f"tinode-reader-{self.username}"
@@ -96,7 +96,7 @@ class TinodeSession:
             {"hi": {"ver": "0.22", "ua": self.ua, "lang": "zh-CN"}},
             wait=True,
         )
-        log.info("[%s] hi -> %s", self.username, (ctrl or {}).get("text"))
+        log.info("[%s] 握手响应：%s", self.username, (ctrl or {}).get("text"))
 
         login = await self.send(
             {
@@ -123,11 +123,11 @@ class TinodeSession:
                 )
                 code = (login or {}).get("code", 500)
             if code >= 400:
-                raise RuntimeError(f"login failed for {self.username}: {login}")
+                raise RuntimeError(f"{self.username} 登录失败：{login}")
 
         params = login.get("params") or {}
         self.user_id = params.get("user")
-        log.info("[%s] logged in as %s", self.username, self.user_id)
+        log.info("[%s] 已登录为 %s", self.username, self.user_id)
 
         # 只拉订阅列表，不拉历史 data
         me_meta = await self.send(
@@ -135,14 +135,14 @@ class TinodeSession:
             wait=True,
         )
         if me_meta and me_meta.get("code", 500) >= 400:
-            raise RuntimeError(f"sub me failed: {me_meta}")
+            raise RuntimeError(f"订阅 me 失败：{me_meta}")
         self._subscribed.add("me")
         self.ready_at = time.time()
 
     async def _register_account(self) -> None:
         """用 basic 方案创建账号；若已存在则忽略。"""
         fn = (self.display_name or self.username).strip()
-        # tags: 方便 fnd 搜索 alias/用户名/角色名
+        # 同步 tags，便于 fnd 按 alias、用户名或角色名搜索。
         tags = [self.username, f"alias:{self.username}"]
         if self.display_name:
             tags.append(self.display_name)
@@ -163,14 +163,14 @@ class TinodeSession:
             timeout=30.0,
         )
         code = (acc or {}).get("code", 500)
-        # 409 already exists / 200 ok
+        # 409 表示账号已存在，200 表示创建成功。
         if code >= 400 and code != 409:
             # 有的部署返回 200 + params；有的 409
-            log.warning("[%s] register resp: %s", self.username, acc)
+            log.warning("[%s] 注册响应：%s", self.username, acc)
             if code >= 500:
-                raise RuntimeError(f"register failed for {self.username}: {acc}")
+                raise RuntimeError(f"{self.username} 注册失败：{acc}")
         else:
-            log.info("[%s] registered as %s", self.username, fn)
+            log.info("[%s] 已注册为 %s", self.username, fn)
 
     async def set_display_name(self, display_name: str) -> None:
         """更新 me 的公开显示名（联系人列表可见）。"""
@@ -202,9 +202,9 @@ class TinodeSession:
             )
             code = (ctrl or {}).get("code", 500)
         if code >= 400:
-            log.warning("[%s] set display name failed: %s", self.username, ctrl)
+            log.warning("[%s] 设置显示名称失败：%s", self.username, ctrl)
         else:
-            log.info("[%s] display name -> %s", self.username, name)
+            log.info("[%s] 显示名称已更新为 %s", self.username, name)
 
     async def subscribe_topic(self, topic: str) -> None:
         if not topic or topic in self._subscribed:
@@ -219,10 +219,10 @@ class TinodeSession:
             )
             code = (ctrl or {}).get("code", 500)
             if code >= 400 and code != 304:
-                log.warning("[%s] sub %s failed: %s", self.username, topic, ctrl)
+                log.warning("[%s] 订阅 %s 失败：%s", self.username, topic, ctrl)
                 return
             self._subscribed.add(topic)
-            log.info("[%s] subscribed %s", self.username, topic)
+            log.info("[%s] 已订阅 %s", self.username, topic)
 
     async def publish_text(self, topic: str, text: str) -> None:
         text = (text or "").strip()
@@ -320,13 +320,13 @@ class TinodeSession:
         try:
             await self.subscribe_topic(topic)
         except Exception as e:  # noqa: BLE001
-            log.warning("[%s] sub task %s: %s", self.username, topic, e)
+            log.warning("[%s] 订阅任务 %s 失败：%s", self.username, topic, e)
 
     async def _safe_on_data(self, topic: str, data: dict[str, Any]) -> None:
         try:
             await self.on_data(self, topic, data)
         except Exception:  # noqa: BLE001
-            log.exception("[%s] on_data error topic=%s", self.username, topic)
+            log.exception("[%s] 处理消息失败，主题=%s", self.username, topic)
 
     async def _reader_loop(self) -> None:
         assert self._ws is not None
@@ -337,12 +337,12 @@ class TinodeSession:
                 try:
                     pkt = json.loads(raw)
                 except json.JSONDecodeError:
-                    log.warning("[%s] bad json: %s", self.username, str(raw)[:120])
+                    log.warning("[%s] 收到无效 JSON：%s", self.username, str(raw)[:120])
                     continue
                 await self._handle_packet(pkt)
         except Exception as e:  # noqa: BLE001
             if not self._closed.is_set():
-                log.warning("[%s] reader stopped: %s", self.username, e)
+                log.warning("[%s] 读取任务已停止：%s", self.username, e)
                 for fut in list(self._pending.values()):
                     if not fut.done():
                         fut.set_exception(ConnectionError(str(e)))

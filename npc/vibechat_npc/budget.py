@@ -33,7 +33,7 @@ class SlidingWindowRateLimiter:
     async def acquire_or_skip(self) -> bool:
         ok = await self.try_acquire()
         if not ok:
-            log.debug("rate limit hit rpm=%s", self.rpm)
+            log.debug("已达到速率上限，rpm=%s", self.rpm)
         return ok
 
     def snapshot(self) -> tuple[int, int]:

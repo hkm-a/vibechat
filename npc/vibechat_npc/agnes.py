@@ -41,13 +41,13 @@ class AgnesClient:
                     text = self._request(model, messages, max_tokens=tokens)
                     if text.strip():
                         return text.strip()
-                    log.warning("model %s empty content (max_tokens=%s)", model, tokens)
+                    log.warning("模型 %s 返回空内容（max_tokens=%s）", model, tokens)
                 except Exception as e:  # noqa: BLE001
                     last_err = e
-                    log.warning("model %s failed: %s", model, e)
+                    log.warning("模型 %s 调用失败：%s", model, e)
                     break  # 换模型，不必抬 max_tokens
         if last_err:
-            log.error("all models failed, last=%s", last_err)
+            log.error("全部模型均调用失败，最后错误：%s", last_err)
         return "嗯，我这边信号不太好，再说一次？"
 
     def _request(self, model: str, messages: Sequence[ChatMessage], *, max_tokens: int) -> str:
@@ -75,11 +75,11 @@ class AgnesClient:
                 data = json.loads(resp.read().decode("utf-8"))
         except urllib.error.HTTPError as e:
             detail = e.read().decode("utf-8", errors="replace")[:300]
-            raise RuntimeError(f"HTTP {e.code}: {detail}") from e
+            raise RuntimeError(f"HTTP {e.code} 请求失败：{detail}") from e
 
         choices = data.get("choices") or []
         if not choices:
-            raise RuntimeError(f"no choices: {str(data)[:300]}")
+            raise RuntimeError(f"响应缺少 choices：{str(data)[:300]}")
         msg = choices[0].get("message") or {}
         content = _normalize_content(msg.get("content"))
         if content.strip():
@@ -137,7 +137,7 @@ def build_messages(
     *,
     history_limit: int,
 ) -> list[ChatMessage]:
-    """history: (role, text) role in {user, assistant}。"""
+    """将 `(role, text)` 历史转换为模型消息，仅接受用户与助手角色。"""
     tail = list(history)[-history_limit:]
     out = [ChatMessage(role="system", content=system)]
     for role, text in tail:

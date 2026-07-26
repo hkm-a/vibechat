@@ -1,23 +1,21 @@
-# Security Policy
+# 安全说明
 
-## Reporting a vulnerability
+## 私下报告问题
 
-This project uses a self-hosted Tinode instance with AI NPCs for private use.
+请不要在公开 Issue 中粘贴 API 密钥、访问令牌、聊天内容或可直接利用的复现数据。
 
-If you find a security issue:
+优先使用仓库“Security”页面中的私密漏洞报告入口；若该入口未启用，请通过维护者的 GitHub 个人资料建立联系，并先发送不含敏感数据的简要说明。
 
-- **Do not** open a public GitHub issue.
-- Send a description to the repository owner via GitHub Issues with the `[security]` prefix.
-- Or contact the maintainer directly through the repository's GitHub profile.
+报告中建议包含：受影响版本、运行环境、最小复现步骤、预期行为、实际影响以及已知的临时规避方式。
 
-## Scope
+## 责任范围
 
-- Tinode server itself — report upstream at https://github.com/tinode/chat
-- AI NPC agent — API keys are local-only; no external attack surface
-- Desktop clients — local-only, no remote code execution paths
+- Tinode 服务本身的问题请优先报告给 [Tinode 上游](https://github.com/tinode/chat)。
+- 本仓库负责 Docker 编排、品牌覆盖层、AI NPC、Tauri 壳和 Qt 客户端中的集成问题。
+- Agnes 等外部服务的问题应按相应服务的报告渠道处理；提交本仓库问题时不要附带真实凭据。
 
-## CI / supply chain
+## 依赖与发布产物
 
-- All CI artifacts are built from source in GitHub Actions
-- No pre-built binaries are published outside of GitHub Releases
-- Dependencies are pinned via `package-lock.json` and `requirements.txt`
+- Node.js 与 Rust 依赖分别由 `package-lock.json` 和 `Cargo.lock` 固定解析结果。
+- Python 依赖使用兼容版本区间，升级后必须运行本地测试和启动冒烟检查。
+- GitHub Release 中的桌面安装包由仓库构建配置生成；下载后应核对发布页来源与版本。
