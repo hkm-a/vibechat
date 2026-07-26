@@ -107,9 +107,10 @@ git tag v0.2.0
 git push origin v0.2.0
 ```
 
-贡献前至少检查启动脚本与 Docker Compose 配置：
+贡献前先运行不依赖 Docker 的 NPC 核心测试，再检查启动脚本与 Docker Compose 配置：
 
 ```bash
+uv run --python 3.12 python -m unittest discover -s tests -v
 bash -n npc/start.sh
 bash -n start-desktop.sh
 bash -n desktop-tauri/start.sh
