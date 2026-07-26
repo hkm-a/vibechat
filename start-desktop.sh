@@ -12,9 +12,19 @@ if ! docker info >/dev/null 2>&1; then
 fi
 sudo docker compose up -d
 
+npc_is_running() {
+  local pid cwd
+  while read -r pid; do
+    cwd="$(readlink -f "/proc/$pid/cwd" 2>/dev/null || true)"
+    if [[ "$cwd" == "$ROOT/npc" ]]; then
+      return 0
+    fi
+  done < <(pgrep -f '[.]venv/bin/python run.py' || true)
+  return 1
+}
+
 echo "==> 2/3 启动 AI NPC（后台）"
-if pgrep -f '/home/hkm/projects/teleg/npc/.venv/bin/python run.py' >/dev/null 2>&1 \
-  || pgrep -f 'npc/.venv/bin/python run.py' >/dev/null 2>&1; then
+if npc_is_running; then
   echo "    NPC 已在运行"
 else
   (

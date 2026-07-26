@@ -3,8 +3,20 @@
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "$0")" && pwd)"
-WIN_SRC="/mnt/c/Users/hkm/projects/vibechat-desktop-src"
-WIN_SRC_WIN='C:\Users\hkm\projects\vibechat-desktop-src'
+WIN_SRC_WIN="$(
+  powershell.exe -NoProfile -Command \
+    '[IO.Path]::Combine($env:TEMP, "vibechat-qt-build-source")' \
+    | tr -d '\r' | tail -n1
+)"
+WIN_SRC="$(wslpath -u "$WIN_SRC_WIN")"
+
+case "$WIN_SRC" in
+  /mnt/?/*/vibechat-qt-build-source) ;;
+  *)
+    echo "拒绝使用未验证的 Windows 暂存目录：$WIN_SRC" >&2
+    exit 1
+    ;;
+esac
 
 echo "==> 同步源码到 Windows 路径: $WIN_SRC"
 mkdir -p "$WIN_SRC"
@@ -22,4 +34,4 @@ powershell.exe -NoProfile -ExecutionPolicy Bypass -File "$WIN_SRC_WIN\build-wind
 
 echo ""
 echo "Windows 桌面应出现 VibeChat 快捷方式。"
-echo "登录服务器填: localhost:6060 （Docker 端口已映射到 Windows）"
+echo "登录服务器填写：localhost:6060（Docker 端口已映射到 Windows）"

@@ -49,12 +49,12 @@ class TopicInfo:
 class TinodeBridge(QObject):
     """Qt 可订阅的 Tinode 会话。"""
 
-    signed_in = Signal(str, str)  # user_id, display_name
-    signed_out = Signal(str)  # reason
+    signed_in = Signal(str, str)  # 用户 ID、显示名称
+    signed_out = Signal(str)  # 退出原因
     error = Signal(str)
     topics_changed = Signal()
-    messages_changed = Signal(str)  # topic
-    search_results = Signal(list)  # [{user, fn}]
+    messages_changed = Signal(str)  # 主题
+    search_results = Signal(list)  # 用户与显示名称列表
     group_created = Signal(str)
     status = Signal(str)
 
@@ -93,7 +93,7 @@ class TinodeBridge(QObject):
 
     def _submit(self, coro):
         if not self._loop:
-            raise RuntimeError("bridge not started")
+            raise RuntimeError("Tinode 后台桥尚未启动")
         return asyncio.run_coroutine_threadsafe(coro, self._loop)
 
     def stop(self) -> None:
@@ -189,7 +189,7 @@ class TinodeBridge(QObject):
             self.status.emit("已登录")
             self.signed_in.emit(self._user_id or "", self._me_name or username)
         except Exception as e:  # noqa: BLE001
-            log.exception("login failed")
+            log.exception("登录失败")
             self.error.emit(str(e))
             await self._disconnect()
 
@@ -202,7 +202,7 @@ class TinodeBridge(QObject):
             self._ws = None
         for fut in list(self._pending.values()):
             if not fut.done():
-                fut.set_exception(ConnectionError("disconnected"))
+                fut.set_exception(ConnectionError("连接已断开"))
         self._pending.clear()
 
     async def _reader(self) -> None:
@@ -219,7 +219,7 @@ class TinodeBridge(QObject):
         finally:
             for fut in list(self._pending.values()):
                 if not fut.done():
-                    fut.set_exception(ConnectionError("reader stopped"))
+                    fut.set_exception(ConnectionError("读取任务已停止"))
 
     async def _handle(self, pkt: dict) -> None:
         if "ctrl" in pkt:
@@ -313,10 +313,11 @@ class TinodeBridge(QObject):
                 "me": me,
             }
         )
-        t = self._ensure_topic(topic, last=text, seq=max(self.topics.get(topic, TopicInfo(topic)).seq, seq or 0))
-        if not t.title or t.title == topic:
-            # keep
-            pass
+        self._ensure_topic(
+            topic,
+            last=text,
+            seq=max(self.topics.get(topic, TopicInfo(topic)).seq, seq or 0),
+        )
         self.topics_changed.emit()
         self.messages_changed.emit(topic)
 
@@ -367,7 +368,7 @@ class TinodeBridge(QObject):
                 await self._send({"set": {"topic": "fnd", "sub": {"private": private}}}, wait=True)
                 await self._send({"get": {"topic": "fnd", "what": "sub"}}, wait=True)
                 await asyncio.sleep(0.35)
-                # results arrive via meta → search_results; keep last non-empty by waiting
+                # 搜索结果通过 meta 事件抵达，短暂等待最后一批非空结果。
             # 给 meta 一点时间
             await asyncio.sleep(0.2)
         except Exception as e:  # noqa: BLE001

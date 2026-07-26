@@ -13,7 +13,7 @@ from vibechat_npc.roster import write_personas_json  # noqa: E402
 
 def main() -> None:
     n = write_personas_json(ROOT / "personas.json")
-    print(f"wrote {n} personas -> {ROOT / 'personas.json'}")
+    print(f"已写入 {n} 个角色：{ROOT / 'personas.json'}")
 
 
 if __name__ == "__main__":

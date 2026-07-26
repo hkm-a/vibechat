@@ -1,6 +1,6 @@
 # 在 Windows 上打包 VibeChat 桌面客户端
 # 用法（PowerShell）:
-#   cd C:\Users\hkm\projects\vibechat-desktop-src
+#   cd <仓库路径>\client
 #   powershell -ExecutionPolicy Bypass -File .\build-windows.ps1
 #
 # 产出:
@@ -23,7 +23,7 @@ function Resolve-Python {
   foreach ($c in $candidates) {
     if (Test-Path $c) { return $c }
   }
-  # py launcher tags
+  # 依次尝试 Python Launcher 的版本标签。
   foreach ($tag in @("-3.11", "-3.12", "-3.13", "-3")) {
     try {
       $out = & py $tag -c "import sys; print(sys.executable)" 2>$null
@@ -77,7 +77,7 @@ $w = New-Object -ComObject WScript.Shell
 $sc = $w.CreateShortcut($lnkPath)
 $sc.TargetPath = $target
 $sc.WorkingDirectory = $installDir
-$sc.Description = "VibeChat Desktop - Tinode 客户端（连本机 6060）"
+$sc.Description = "VibeChat 桌面端——Tinode 客户端（连接本机 6060）"
 $sc.Save()
 
 Write-Host ""

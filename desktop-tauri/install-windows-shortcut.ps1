@@ -1,6 +1,6 @@
-# Install Windows desktop shortcut -> Chrome/Edge app window for localhost:6060
-# Same web UI as browser. Does NOT launch WSL/Linux Tauri or Qt.
-# Run from WSL:
+# 安装 Windows 桌面快捷方式，使用 Chrome 或 Edge 应用窗口打开 localhost:6060。
+# 界面与浏览器一致，不会启动 WSL/Linux Tauri 或 Qt 客户端。
+# 从 WSL 运行：
 #   powershell.exe -ExecutionPolicy Bypass -File desktop-tauri/install-windows-shortcut.ps1
 
 $ErrorActionPreference = "Stop"
@@ -45,19 +45,19 @@ if ($browser) {
   $sc.TargetPath = $browser
   $sc.Arguments = "--app=http://localhost:6060/ --new-window"
   $sc.WorkingDirectory = Split-Path $browser
-  Write-Host "Browser: $browser"
+  Write-Host "浏览器：$browser"
 } else {
   $sc.TargetPath = $winBat
   $sc.Arguments = ""
   $sc.WorkingDirectory = $installDir
-  Write-Host "Browser not found; using bat fallback"
+  Write-Host "未找到受支持的浏览器，改用批处理回退入口"
 }
-$sc.Description = "VibeChat = same web UI as http://localhost:6060/"
+$sc.Description = "VibeChat：打开 http://localhost:6060/ 的桌面入口"
 $sc.Save()
 
-# also keep bat copy
+# 同时保留批处理副本，便于修复已有快捷方式。
 Copy-Item $winBat (Join-Path $env:LOCALAPPDATA "VibeChat-Tauri\start-on-windows.bat") -Force -ErrorAction SilentlyContinue
 
-Write-Host "Desktop shortcut: $lnkPath"
-Write-Host "Args: $($sc.Arguments)"
-Write-Host "UI is Tinode web; packaging does not redesign the page."
+Write-Host "桌面快捷方式：$lnkPath"
+Write-Host "启动参数：$($sc.Arguments)"
+Write-Host "界面直接使用 Tinode Web，打包过程不会重绘页面。"
